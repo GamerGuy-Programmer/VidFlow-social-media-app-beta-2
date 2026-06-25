@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="VidFlow"/>
+<meta name="theme-color" content="#000000"/>
+<title>VidFlow</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;background:#000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  :root{--br:#fe2c55;--bg:#000;--c1:#111;--c2:#1a1a1a;--tm:#fff;--mu:#aaa;--rmd:8px;--rlg:12px;}
+  #app{display:flex;flex-direction:column;height:100vh;max-width:430px;margin:0 auto;background:var(--bg);color:var(--tm);position:relative;overflow:hidden;}
+  .scr{display:none;flex-direction:column;flex:1;overflow:hidden;}
+  .scr.active{display:flex;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--bg);border-bottom:0.5px solid #222;flex-shrink:0;}
+  .topbar .logo{font-size:20px;font-weight:600;color:var(--br);}
+  .topbar .icons{display:flex;gap:16px;align-items:center;}
+  .topbar .icons i{font-size:22px;color:var(--tm);cursor:pointer;}
+  .botnav{display:flex;align-items:center;justify-content:space-around;height:58px;background:#0a0a0a;border-top:0.5px solid #222;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);}
+  .nb{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 8px;flex:1;}
+  .nb i{font-size:22px;color:var(--mu);}
+  .nb span{font-size:10px;color:var(--mu);}
+  .nb.active i,.nb.active span{color:#fff;}
+  .postbtn{background:var(--br);border-radius:10px;padding:6px 13px;display:flex;align-items:center;gap:3px;cursor:pointer;flex-shrink:0;}
+  .postbtn i{font-size:20px;color:#fff;}
+  .postbtn span{color:#fff;font-size:10px;}
+  .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+  /* FEED */
+  .feed-wrap{flex:1;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;}
+  .vcard{scroll-snap-align:start;height:calc(100vh - 58px - 44px);background:var(--c1);position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .vthumb{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:72px;}
+  .vover{position:absolute;bottom:0;left:0;right:0;padding:16px 14px 20px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);}
+  .vuser{font-size:14px;font-weight:600;color:#fff;margin-bottom:4px;}
+  .vdesc{font-size:13px;color:#ddd;line-height:1.4;}
+  .vacts{position:absolute;right:12px;bottom:80px;display:flex;flex-direction:column;gap:18px;align-items:center;}
+  .abt{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+  .abt i{font-size:28px;color:#fff;}
+  .abt span{font-size:11px;color:#fff;}
+  .abt.liked i{color:var(--br);}
+  .abt.saved i{color:#FAC775;}
+  .avring{width:38px;height:38px;border-radius:50%;background:var(--br);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;border:2px solid #fff;}
+
+  /* COMMENTS PANEL */
+  .cpanel{position:absolute;bottom:0;left:0;right:0;height:65%;background:#111;border-radius:18px 18px 0 0;border-top:0.5px solid #333;display:flex;flex-direction:column;z-index:60;}
+  .cp-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:0.5px solid #222;flex-shrink:0;}
+  .cp-header span{font-size:15px;font-weight:600;}
+  .cp-header i{font-size:22px;cursor:pointer;color:var(--mu);}
+  .clist{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
+  .citem{display:flex;gap:10px;align-items:flex-start;}
+  .cav{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;}
+  .cuname{font-size:12px;font-weight:600;color:var(--mu);margin-bottom:3px;}
+  .ctext{font-size:14px;color:#fff;line-height:1.4;}
+  .cinput{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:0.5px solid #222;flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+  .cinput input{flex:1;background:#222;border:0.5px solid #333;border-radius:22px;color:#fff;padding:10px 15px;font-size:14px;outline:none;}
+  .cinput button{background:var(--br);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .cinput button i{font-size:18px;color:#fff;}
+
+  /* DISCOVER */
+  .sbar{display:flex;align-items:center;gap:8px;background:#1a1a1a;border-radius:24px;padding:10px 16px;margin-bottom:14px;border:0.5px solid #333;}
+  .sbar i{font-size:18px;color:var(--mu);}
+  .sbar input{background:none;border:none;outline:none;color:#fff;font-size:15px;flex:1;}
+  .tgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+  .ttile{background:var(--c1);border-radius:var(--rmd);padding:28px 14px 12px;position:relative;cursor:pointer;border:0.5px solid #222;min-height:90px;display:flex;flex-direction:column;justify-content:flex-end;}
+  .ticon{font-size:28px;position:absolute;top:10px;left:12px;}
+  .ttag{font-size:14px;font-weight:600;color:#fff;}
+  .tviews{font-size:12px;color:var(--mu);margin-top:2px;}
+
+  /* SAVED */
+  .saved-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;}
+  .sv-thumb{aspect-ratio:9/16;background:var(--c2);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;position:relative;}
+  .sv-rm{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.7);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .sv-rm i{font-size:13px;color:#fff;}
+
+  /* MESSAGES */
+  .conv-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:0.5px solid #1a1a1a;cursor:pointer;active-background:#111;}
+  .conv-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;}
+  .conv-name{font-size:15px;font-weight:600;}
+  .conv-prev{font-size:13px;color:var(--mu);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+  .unread-dot{width:9px;height:9px;border-radius:50%;background:var(--br);flex-shrink:0;}
+  .chat-header{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:0.5px solid #222;flex-shrink:0;}
+  .chat-header i{font-size:22px;cursor:pointer;color:var(--tm);}
+  .chat-title{font-size:16px;font-weight:600;}
+  .chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;}
+  .bubble{max-width:74%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;}
+  .bubble.me{background:var(--br);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+  .bubble.them{background:#222;color:#fff;align-self:flex-start;border-bottom-left-radius:4px;}
+  .bwrap{display:flex;flex-direction:column;}
+  .bwrap.me{align-items:flex-end;}
+  .bwrap.them{align-items:flex-start;}
+  .btime{font-size:10px;color:var(--mu);margin-top:3px;}
+  .chat-input{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:0.5px solid #222;flex-shrink:0;padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+  .chat-input input{flex:1;background:#1a1a1a;border:0.5px solid #333;border-radius:22px;color:#fff;padding:10px 15px;font-size:14px;outline:none;}
+  .chat-input button{background:var(--br);border:none;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+  .chat-input button i{font-size:18px;color:#fff;}
+  .new-msg-btn{display:flex;align-items:center;justify-content:center;gap:7px;margin:14px 16px 0;background:var(--br);border:none;border-radius:var(--rmd);padding:12px;color:#fff;font-size:14px;cursor:pointer;width:calc(100% - 32px);}
+
+  /* PROFILE */
+  .prof-hdr{padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;border-bottom:0.5px solid #222;}
+  .prof-av{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:600;}
+  .prof-name{font-size:18px;font-weight:600;}
+  .prof-handle{font-size:14px;color:var(--mu);}
+  .prof-stats{display:flex;gap:30px;}
+  .pst{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .pst strong{font-size:17px;font-weight:600;}
+  .pst span{font-size:12px;color:var(--mu);}
+  .ebtn{background:none;border:1px solid #444;border-radius:8px;color:#fff;padding:8px 28px;font-size:14px;cursor:pointer;}
+  .lgbtn{background:none;border:1px solid #fe2c55;border-radius:8px;color:#fe2c55;padding:8px 20px;font-size:14px;cursor:pointer;}
+  .vg3{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px;}
+  .vt3{aspect-ratio:9/16;background:var(--c2);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;}
+
+  /* ADMIN */
+  .admin-wrap{flex:1;overflow-y:auto;padding:14px;}
+  .at{font-size:16px;font-weight:600;margin-bottom:14px;padding-bottom:12px;border-bottom:0.5px solid #333;}
+  .srow{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+  .sc{background:var(--c1);border:0.5px solid #222;border-radius:var(--rmd);padding:12px;}
+  .sc .lb{font-size:12px;color:var(--mu);margin-bottom:4px;}
+  .sc .vl{font-size:22px;font-weight:600;}
+  .sc .sb{font-size:12px;color:#4ade80;margin-top:2px;}
+  .stitle{font-size:12px;font-weight:600;color:var(--mu);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.5px;}
+  .urow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--c1);border-radius:var(--rmd);margin-bottom:6px;border:0.5px solid #222;}
+  .uav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .ui{flex:1;min-width:0;}
+  .ui .un{font-size:14px;font-weight:600;}
+  .ui .uj{font-size:12px;color:var(--mu);}
+  .bdg{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;}
+  .bdg.gold{background:rgba(250,199,117,.15);color:#FAC775;}
+  .bdg.green{background:rgba(74,222,128,.12);color:#4ade80;}
+  .aa{font-size:12px;color:var(--br);cursor:pointer;margin-left:6px;}
+  .trow{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--c1);border-radius:var(--rmd);margin-bottom:6px;border:0.5px solid #222;}
+  .trow .tl{font-size:14px;}
+  .tog{width:40px;height:22px;border-radius:11px;cursor:pointer;position:relative;border:none;outline:none;transition:background .2s;}
+  .tog.on{background:var(--br);}
+  .tog.off{background:#333;}
+  .tog::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;transition:left .2s;}
+  .tog.on::after{left:21px;}
+  .tog.off::after{left:3px;}
+
+  /* UPLOAD */
+  .upl-wrap{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px;gap:14px;overflow-y:auto;}
+  .upl-zone{width:100%;max-height:260px;aspect-ratio:9/16;background:var(--c1);border:2px dashed #333;border-radius:var(--rlg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;}
+  .upl-zone i{font-size:42px;color:#444;}
+  .upl-zone p{font-size:15px;color:var(--mu);}
+  .upl-in,.upl-ta{width:100%;background:var(--c1);border:0.5px solid #333;border-radius:var(--rmd);color:#fff;padding:12px 14px;font-size:14px;outline:none;}
+  .upl-ta{resize:none;height:60px;}
+  .upl-sub{width:100%;background:var(--br);color:#fff;border:none;border-radius:var(--rmd);padding:14px;font-size:15px;font-weight:600;cursor:pointer;}
+
+  /* AUTH */
+  .auth-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 24px;}
+  .alogo{font-size:38px;font-weight:700;color:var(--br);margin-bottom:6px;}
+  .asub{font-size:14px;color:var(--mu);margin-bottom:26px;}
+  .atabs{display:flex;width:100%;border-bottom:0.5px solid #333;margin-bottom:22px;}
+  .atab{flex:1;text-align:center;padding:12px;font-size:15px;color:var(--mu);cursor:pointer;border-bottom:2px solid transparent;}
+  .atab.active{color:#fff;border-bottom:2px solid var(--br);}
+  .afield{width:100%;background:#1a1a1a;border:0.5px solid #333;border-radius:var(--rmd);color:#fff;padding:13px 15px;font-size:15px;outline:none;margin-bottom:10px;}
+  .afield:focus{border-color:var(--br);}
+  .abtn{width:100%;background:var(--br);color:#fff;border:none;border-radius:var(--rmd);padding:14px;font-size:16px;font-weight:600;cursor:pointer;margin-top:4px;}
+  .aerr{font-size:13px;color:#f87171;margin-bottom:8px;display:none;}
+  .aswitch{font-size:14px;color:var(--mu);margin-top:14px;text-align:center;}
+  .aswitch a{color:var(--br);cursor:pointer;}
+
+  /* MODAL */
+  .mbg{display:none;position:absolute;inset:0;background:rgba(0,0,0,.7);z-index:90;align-items:center;justify-content:center;}
+  .mbg.open{display:flex;}
+  .mbox{background:#1a1a1a;border-radius:var(--rlg);border:0.5px solid #333;padding:22px;width:300px;}
+  .mbox h3{font-size:16px;font-weight:600;margin-bottom:10px;}
+  .mbox p{font-size:14px;color:var(--mu);margin-bottom:16px;line-height:1.5;}
+  .mbtns{display:flex;gap:10px;justify-content:flex-end;}
+  .mbtns button{padding:9px 18px;border-radius:8px;font-size:14px;cursor:pointer;border:none;font-weight:500;}
+  .mbc{background:#333;color:#fff;}
+  .mbd{background:var(--br);color:#fff;}
+
+  /* TOAST */
+  .ntf{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:9px 20px;border-radius:22px;font-size:14px;font-weight:600;z-index:200;display:none;white-space:nowrap;pointer-events:none;}
+
+  /* SECTION HEADING */
+  .sec-h{padding:14px 14px 6px;font-size:16px;font-weight:600;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- AUTH -->
+<div class="scr active" id="scr-auth">
+  <div class="auth-wrap">
+    <div class="alogo">VidFlow</div>
+    <div class="asub">Sign in or create an account</div>
+    <div class="atabs" style="width:100%">
+      <div class="atab active" id="tab-li" onclick="authTab('li')">Log in</div>
+      <div class="atab" id="tab-su" onclick="authTab('su')">Sign up</div>
+    </div>
+    <div id="li-form" style="width:100%">
+      <input class="afield" id="li-u" type="text" placeholder="Username" autocomplete="off" autocorrect="off" autocapitalize="none"/>
+      <input class="afield" id="li-p" type="password" placeholder="Password"/>
+      <div class="aerr" id="li-err">Incorrect username or password.</div>
+      <button class="abtn" onclick="doLogin()">Log in</button>
+      <div class="aswitch">No account? <a onclick="authTab('su')">Sign up</a></div>
+    </div>
+    <div id="su-form" style="width:100%;display:none;">
+      <input class="afield" id="su-n" type="text" placeholder="Full name" autocomplete="off"/>
+      <input class="afield" id="su-u" type="text" placeholder="Username" autocomplete="off" autocorrect="off" autocapitalize="none"/>
+      <input class="afield" id="su-p" type="password" placeholder="Password"/>
+      <div class="aerr" id="su-err">Username already taken.</div>
+      <button class="abtn" onclick="doSignup()">Create account</button>
+      <div class="aswitch">Have an account? <a onclick="authTab('li')">Log in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar" id="topbar" style="display:none;">
+  <span class="logo">VidFlow</span>
+  <div class="icons">
+    <i class="ti ti-search" onclick="gotoScr('discover')" aria-label="Search"></i>
+    <i class="ti ti-bell" onclick="ntf('No new notifications')" aria-label="Notifications"></i>
+    <span id="admin-btn" style="display:none"><i class="ti ti-shield-check" style="color:var(--br);cursor:pointer" onclick="gotoScr('admin')" aria-label="Admin"></i></span>
+  </div>
+</div>
+
+<!-- FEED -->
+<div class="scr" id="scr-feed">
+  <div class="feed-wrap" id="feed-wrap">
+    <div class="vcard">
+      <div class="vthumb" style="background:linear-gradient(135deg,#1a1a2e,#16213e)">🎵</div>
+      <div class="vover"><div class="vuser">@dancing_queen</div><div class="vdesc">This beat hits different at midnight 🌙 #fyp #vibes</div></div>
+      <div class="vacts">
+        <div class="abt like-btn" onclick="toggleLike(this)"><i class="ti ti-heart"></i><span>42.1K</span></div>
+        <div class="abt" onclick="openComments(0)"><i class="ti ti-message-circle"></i><span id="cc-0">3</span></div>
+        <div class="abt save-btn" onclick="toggleSave(this,0,'🎵','dancing_queen')"><i class="ti ti-bookmark"></i><span>Save</span></div>
+        <div class="abt" onclick="ntf('Shared!')"><i class="ti ti-share"></i><span>Share</span></div>
+        <div class="avring">D</div>
+      </div>
+    </div>
+    <div class="vcard">
+      <div class="vthumb" style="background:linear-gradient(135deg,#0d1b2a,#1b4332)">🍜</div>
+      <div class="vover"><div class="vuser">@chef_miko</div><div class="vdesc">5-min ramen that tastes like hours 🍜 #cooking</div></div>
+      <div class="vacts">
+        <div class="abt like-btn" onclick="toggleLike(this)"><i class="ti ti-heart"></i><span>89.4K</span></div>
+        <div class="abt" onclick="openComments(1)"><i class="ti ti-message-circle"></i><span id="cc-1">2</span></div>
+        <div class="abt save-btn" onclick="toggleSave(this,1,'🍜','chef_miko')"><i class="ti ti-bookmark"></i><span>Save</span></div>
+        <div class="abt" onclick="ntf('Shared!')"><i class="ti ti-share"></i><span>Share</span></div>
+        <div class="avring">M</div>
+      </div>
+    </div>
+    <div class="vcard">
+      <div class="vthumb" style="background:linear-gradient(135deg,#2d1b69,#11998e)">🛹</div>
+      <div class="vover"><div class="vuser">@sk8r_boi</div><div class="vdesc">Landed this after 3 weeks 🔥 #skateboard</div></div>
+      <div class="vacts">
+        <div class="abt like-btn" onclick="toggleLike(this)"><i class="ti ti-heart"></i><span>214K</span></div>
+        <div class="abt" onclick="openComments(2)"><i class="ti ti-message-circle"></i><span id="cc-2">2</span></div>
+        <div class="abt save-btn" onclick="toggleSave(this,2,'🛹','sk8r_boi')"><i class="ti ti-bookmark"></i><span>Save</span></div>
+        <div class="abt" onclick="ntf('Shared!')"><i class="ti ti-share"></i><span>Share</span></div>
+        <div class="avring">S</div>
+      </div>
+    </div>
+  </div>
+  <!-- COMMENTS PANEL -->
+  <div class="cpanel" id="cpanel" style="display:none;">
+    <div class="cp-header"><span id="cp-title">Comments</span><i class="ti ti-x" onclick="closeComments()"></i></div>
+    <div class="clist" id="clist"></div>
+    <div class="cinput">
+      <input type="text" id="cinput" placeholder="Add a comment..." autocorrect="off"/>
+      <button onclick="postComment()"><i class="ti ti-send"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- DISCOVER -->
+<div class="scr" id="scr-discover">
+  <div class="scroll" style="padding:14px;">
+    <div class="sbar"><i class="ti ti-search"></i><input type="text" placeholder="Search videos, users, tags..."/></div>
+    <div class="stitle" style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Trending</div>
+    <div class="tgrid">
+      <div class="ttile" onclick="ntf('#fyp — 4.2B views')"><span class="ticon">🔥</span><div class="ttag">#fyp</div><div class="tviews">4.2B views</div></div>
+      <div class="ttile" onclick="ntf('#cooking — 1.8B views')"><span class="ticon">🍳</span><div class="ttag">#cooking</div><div class="tviews">1.8B views</div></div>
+      <div class="ttile" onclick="ntf('#dance — 2.1B views')"><span class="ticon">💃</span><div class="ttag">#dance</div><div class="tviews">2.1B views</div></div>
+      <div class="ttile" onclick="ntf('#gaming — 980M views')"><span class="ticon">🎮</span><div class="ttag">#gaming</div><div class="tviews">980M views</div></div>
+    </div>
+    <div class="stitle" style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Suggested creators</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="urow"><div class="uav" style="background:#fe2c55">M</div><div class="ui"><div class="un">@chef_miko</div><div class="uj">2.3M followers</div></div><button style="background:var(--br);border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer" onclick="ntf('Following @chef_miko!')">Follow</button></div>
+      <div class="urow"><div class="uav" style="background:#7f77dd">S</div><div class="ui"><div class="un">@sk8r_boi</div><div class="uj">891K followers</div></div><button style="background:var(--br);border:none;color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;cursor:pointer" onclick="ntf('Following @sk8r_boi!')">Follow</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="scr" id="scr-upload">
+  <div class="upl-wrap">
+    <div class="upl-zone" onclick="ntf('File picker would open here')"><i class="ti ti-upload"></i><p>Tap to select a video</p></div>
+    <input class="upl-in" type="text" placeholder="Add a title..." style="margin-bottom:10px;"/>
+    <textarea class="upl-ta" placeholder="Write a description... #hashtags" style="margin-bottom:10px;"></textarea>
+    <button class="upl-sub" onclick="ntf('Video posted! 🎉')">Post video</button>
+  </div>
+</div>
+
+<!-- SAVED -->
+<div class="scr" id="scr-saved">
+  <div class="scroll">
+    <div class="sec-h">Saved videos</div>
+    <div class="saved-grid" id="saved-grid"></div>
+    <div id="saved-empty" style="display:none;text-align:center;padding:50px 20px;color:var(--mu);font-size:15px;line-height:1.8;">No saved videos yet.<br>Tap the bookmark on any video.</div>
+  </div>
+</div>
+
+<!-- MESSAGES -->
+<div class="scr" id="scr-messages">
+  <div id="inbox-view" style="display:flex;flex-direction:column;height:100%;">
+    <div class="sec-h" style="border-bottom:0.5px solid #222;padding-bottom:12px;">Messages</div>
+    <button class="new-msg-btn" onclick="openNewMsg()"><i class="ti ti-pencil" style="font-size:17px"></i> New message</button>
+    <div style="flex:1;overflow-y:auto;margin-top:8px;" id="conv-list"></div>
+  </div>
+  <div id="chat-view" style="display:none;flex-direction:column;height:100%;">
+    <div class="chat-header">
+      <i class="ti ti-arrow-left" onclick="backToInbox()"></i>
+      <div id="chat-av" style="width:34px;height:34px;border-radius:50%;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;"></div>
+      <div class="chat-title" id="chat-title"></div>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-input">
+      <input type="text" id="msg-input" placeholder="Message..." autocorrect="off"/>
+      <button onclick="sendMsg()"><i class="ti ti-send"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="scr" id="scr-profile">
+  <div class="scroll">
+    <div class="prof-hdr">
+      <div class="prof-av" id="pav"></div>
+      <div class="prof-name" id="pname"></div>
+      <div class="prof-handle" id="phandle"></div>
+      <div class="prof-stats">
+        <div class="pst"><strong>0</strong><span>Videos</span></div>
+        <div class="pst"><strong>0</strong><span>Followers</span></div>
+        <div class="pst"><strong>0</strong><span>Likes</span></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="ebtn" onclick="ntf('Edit profile opened')">Edit profile</button>
+        <button class="lgbtn" onclick="doLogout()">Log out</button>
+      </div>
+    </div>
+    <div class="vg3">
+      <div class="vt3" style="background:#111;flex-direction:column;gap:5px;color:#444;font-size:12px;" onclick="gotoScr('upload')">
+        <i class="ti ti-plus" style="font-size:22px"></i><span>Post</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN (Chinguun only) -->
+<div class="scr" id="scr-admin">
+  <div class="admin-wrap">
+    <div class="at"><i class="ti ti-shield-check" style="color:var(--br);margin-right:8px"></i>Admin control panel</div>
+    <div class="srow">
+      <div class="sc"><div class="lb">Total users</div><div class="vl" id="a-uc">3</div><div class="sb">registered</div></div>
+      <div class="sc"><div class="lb">Videos</div><div class="vl">89K</div><div class="sb">1.4K today</div></div>
+      <div class="sc"><div class="lb">Active now</div><div class="vl">2,140</div><div class="sb">peak hour</div></div>
+      <div class="sc"><div class="lb">Reported</div><div class="vl" style="color:var(--br)">17</div><div class="sb" style="color:#f87171">needs review</div></div>
+    </div>
+    <div class="stitle">User management</div>
+    <div id="a-ulist"></div>
+    <div class="stitle">App settings</div>
+    <div class="trow"><span class="tl">New registrations</span><button class="tog on" id="t1" onclick="togSet('t1')"></button></div>
+    <div class="trow"><span class="tl">Video comments</span><button class="tog on" id="t2" onclick="togSet('t2')"></button></div>
+    <div class="trow"><span class="tl">Maintenance mode</span><button class="tog off" id="t3" onclick="togSet('t3')"></button></div>
+    <div class="trow"><span class="tl">AI content filter</span><button class="tog on" id="t4" onclick="togSet('t4')"></button></div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="botnav" id="botnav" style="display:none;">
+  <div class="nb active" id="nb-feed" onclick="gotoScr('feed')"><i class="ti ti-home"></i><span>Home</span></div>
+  <div class="nb" id="nb-discover" onclick="gotoScr('discover')"><i class="ti ti-search"></i><span>Discover</span></div>
+  <div class="postbtn" onclick="gotoScr('upload')"><i class="ti ti-plus"></i><span>Post</span></div>
+  <div class="nb" id="nb-saved" onclick="gotoScr('saved')"><i class="ti ti-bookmark"></i><span>Saved</span></div>
+  <div class="nb" id="nb-messages" onclick="gotoScr('messages')"><i class="ti ti-message"></i><span>Messages</span></div>
+  <div class="nb" id="nb-profile" onclick="gotoScr('profile')"><i class="ti ti-user"></i><span>Profile</span></div>
+</div>
+
+<!-- MODALS -->
+<div class="mbg" id="modal">
+  <div class="mbox">
+    <h3 id="m-title"></h3><p id="m-body"></p>
+    <div class="mbtns"><button class="mbc" onclick="closeModal()">Cancel</button><button class="mbd" onclick="confirmModal()">Confirm</button></div>
+  </div>
+</div>
+<div class="mbg" id="new-msg-modal">
+  <div class="mbox">
+    <h3>New message</h3>
+    <p style="margin-bottom:10px;">Choose who to message:</p>
+    <div id="nm-list" style="display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div class="mbtns"><button class="mbc" onclick="closeNewMsg()">Cancel</button></div>
+  </div>
+</div>
+
+<div class="ntf" id="ntfbar"></div>
+</div>
+
+<script>
+var ACCOUNTS=[
+  {name:'Chinguun',username:'Chinguun',password:'123@Guga',role:'admin',color:'#fe2c55',joined:'Today'},
+  {name:'dancing_queen',username:'dancing_queen',password:'pass1',role:'user',color:'#7f77dd',joined:'Jan 2024'},
+  {name:'chef_miko',username:'chef_miko',password:'pass2',role:'user',color:'#1D9E75',joined:'Mar 2024'}
+];
+var CU=null,SAVED=[],COMMENTS=[
+  [{user:'dancing_queen',color:'#7f77dd',text:'Love this song!',init:'D'},{user:'chef_miko',color:'#1D9E75',text:'Banger 🔥',init:'M'},{user:'sk8r_boi',color:'#fe2c55',text:'This hits!',init:'S'}],
+  [{user:'Chinguun',color:'#fe2c55',text:'Making this tonight!',init:'C'},{user:'sk8r_boi',color:'#fe2c55',text:'Looks delicious',init:'S'}],
+  [{user:'dancing_queen',color:'#7f77dd',text:'That was sick!!',init:'D'},{user:'chef_miko',color:'#1D9E75',text:'Unreal trick',init:'M'}]
+],ACTIVE_VID=0,CONVS={},ACTIVE_CONV=null,ntfT;
+
+function convKey(u){return[CU.username,u].sort().join('__');}
+function initConvs(){ACCOUNTS.forEach(function(a){if(a.username!==CU.username){var k=convKey(a.username);if(!CONVS[k])CONVS[k]={user:a,msgs:[];};}});}
+
+function ntf(m){var b=document.getElementById('ntfbar');b.textContent=m;b.style.display='block';clearTimeout(ntfT);ntfT=setTimeout(function(){b.style.display='none';},2200);}
+
+function authTab(t){
+  document.getElementById('tab-li').classList.toggle('active',t==='li');
+  document.getElementById('tab-su').classList.toggle('active',t==='su');
+  document.getElementById('li-form').style.display=t==='li'?'block':'none';
+  document.getElementById('su-form').style.display=t==='su'?'block':'none';
+  document.getElementById('li-err').style.display='none';
+  document.getElementById('su-err').style.display='none';
+}
+
+function doLogin(){
+  var u=document.getElementById('li-u').value.trim(),p=document.getElementById('li-p').value;
+  var found=ACCOUNTS.find(function(a){return a.username===u&&a.password===p;});
+  if(!found){document.getElementById('li-err').style.display='block';return;}
+  loginOK(found);
+}
+function doSignup(){
+  var n=document.getElementById('su-n').value.trim(),u=document.getElementById('su-u').value.trim().replace(/^@/,''),p=document.getElementById('su-p').value;
+  var e=document.getElementById('su-err');
+  if(!n||!u||!p){e.textContent='Please fill in all fields.';e.style.display='block';return;}
+  if(ACCOUNTS.find(function(a){return a.username===u;})){e.textContent='Username already taken.';e.style.display='block';return;}
+  var cols=['#7f77dd','#1D9E75','#BA7517','#185FA5','#D85A30'];
+  ACCOUNTS.push({name:n,username:u,password:p,role:'user',color:cols[ACCOUNTS.length%cols.length],joined:'Today'});
+  e.style.display='none';
+  loginOK(ACCOUNTS[ACCOUNTS.length-1]);
+}
+function loginOK(acc){
+  CU=acc;initConvs();
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('botnav').style.display='flex';
+  document.getElementById('scr-auth').classList.remove('active');
+  document.getElementById('admin-btn').style.display=acc.username==='Chinguun'?'inline':'none';
+  updateProfile();renderSaved();renderConvList();gotoScr('feed');
+}
+function doLogout(){
+  CU=null;SAVED=[];CONVS={};ACTIVE_CONV=null;
+  document.getElementById('topbar').style.display='none';
+  document.getElementById('botnav').style.display='none';
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('active');});
+  document.getElementById('scr-auth').classList.add('active');
+  document.getElementById('li-u').value='';document.getElementById('li-p').value='';
+  document.getElementById('chat-view').style.display='none';
+  document.getElementById('inbox-view').style.display='flex';
+}
+
+function gotoScr(s){
+  closeComments();
+  document.querySelectorAll('.scr').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.nb').forEach(function(x){x.classList.remove('active');});
+  var el=document.getElementById('scr-'+s);if(el)el.classList.add('active');
+  var nb=document.getElementById('nb-'+s);if(nb)nb.classList.add('active');
+  if(s==='admin')renderAdminList();
+  if(s==='saved')renderSaved();
+  if(s==='messages'){renderConvList();document.getElementById('chat-view').style.display='none';document.getElementById('inbox-view').style.display='flex';}
+}
+
+function updateProfile(){
+  if(!CU)return;
+  var init=CU.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  var av=document.getElementById('pav');av.textContent=init;av.style.background=CU.color;
+  document.getElementById('pname').textContent=CU.name;
+  document.getElementById('phandle').textContent='@'+CU.username;
+}
+
+function toggleLike(btn){btn.classList.toggle('liked');ntf(btn.classList.contains('liked')?'Liked! ❤️':'Unliked');}
+function toggleSave(btn,vid,emoji,owner){
+  btn.classList.toggle('saved');
+  var idx=SAVED.findIndex(function(s){return s.vid===vid;});
+  if(idx===-1){SAVED.push({vid:vid,emoji:emoji,owner:owner});ntf('Saved! ✓');}
+  else{SAVED.splice(idx,1);ntf('Removed from saved');}
+  renderSaved();
+}
+function renderSaved(){
+  var g=document.getElementById('saved-grid'),empty=document.getElementById('saved-empty');
+  g.innerHTML='';
+  if(SAVED.length===0){empty.style.display='block';return;}
+  empty.style.display='none';
+  SAVED.forEach(function(s){
+    var d=document.createElement('div');d.className='sv-thumb';
+    d.innerHTML=s.emoji+'<div class="sv-rm" onclick="removeSaved('+s.vid+',event)"><i class="ti ti-x"></i></div>';
+    g.appendChild(d);
+  });
+}
+function removeSaved(vid,e){
+  e.stopPropagation();
+  SAVED=SAVED.filter(function(s){return s.vid!==vid;});
+  document.querySelectorAll('.save-btn').forEach(function(b,i){if(i===vid)b.classList.remove('saved');});
+  renderSaved();ntf('Removed from saved');
+}
+
+function openComments(vid){
+  ACTIVE_VID=vid;
+  document.getElementById('cpanel').style.display='flex';
+  document.getElementById('cp-title').textContent='Comments ('+COMMENTS[vid].length+')';
+  renderComments();
+}
+function closeComments(){document.getElementById('cpanel').style.display='none';}
+function renderComments(){
+  var list=document.getElementById('clist');list.innerHTML='';
+  COMMENTS[ACTIVE_VID].forEach(function(c){
+    var d=document.createElement('div');d.className='citem';
+    d.innerHTML='<div class="cav" style="background:'+c.color+'">'+c.init+'</div><div><div class="cuname">@'+c.user+'</div><div class="ctext">'+c.text+'</div></div>';
+    list.appendChild(d);
+  });
+  list.scrollTop=list.scrollHeight;
+}
+function postComment(){
+  var inp=document.getElementById('cinput'),txt=inp.value.trim();if(!txt||!CU)return;
+  var init=CU.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  COMMENTS[ACTIVE_VID].push({user:CU.username,color:CU.color,text:txt,init:init});
+  inp.value='';
+  document.getElementById('cc-'+ACTIVE_VID).textContent=COMMENTS[ACTIVE_VID].length;
+  document.getElementById('cp-title').textContent='Comments ('+COMMENTS[ACTIVE_VID].length+')';
+  renderComments();
+}
+
+function renderConvList(){
+  var cl=document.getElementById('conv-list');cl.innerHTML='';
+  ACCOUNTS.filter(function(a){return a.username!==CU.username;}).forEach(function(a){
+    var k=convKey(a.username);if(!CONVS[k])CONVS[k]={user:a,msgs:[]};
+    var conv=CONVS[k],last=conv.msgs.length>0?conv.msgs[conv.msgs.length-1]:null;
+    var init=a.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    var row=document.createElement('div');row.className='conv-row';
+    row.innerHTML='<div class="conv-av" style="background:'+a.color+'">'+init+'</div>'
+      +'<div style="flex:1;min-width:0;"><div class="conv-name">'+a.name+'</div>'
+      +'<div class="conv-prev">'+(last?last.text:'Tap to start chatting')+'</div></div>'
+      +(last&&!last.read&&last.from!==CU.username?'<div class="unread-dot"></div>':'<span style="font-size:11px;color:var(--mu)">'+(last?'now':'')+'</span>');
+    row.onclick=function(){openChat(a.username);};
+    cl.appendChild(row);
+  });
+}
+function openNewMsg(){
+  var list=document.getElementById('nm-list');list.innerHTML='';
+  ACCOUNTS.filter(function(a){return a.username!==CU.username;}).forEach(function(a){
+    var init=a.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    var btn=document.createElement('div');btn.className='urow';btn.style.cursor='pointer';
+    btn.innerHTML='<div class="uav" style="background:'+a.color+'">'+init+'</div><div class="ui"><div class="un">@'+a.username+'</div><div class="uj">'+a.name+'</div></div>';
+    btn.onclick=function(){closeNewMsg();openChat(a.username);};
+    list.appendChild(btn);
+  });
+  document.getElementById('new-msg-modal').classList.add('open');
+}
+function closeNewMsg(){document.getElementById('new-msg-modal').classList.remove('open');}
+function openChat(uname){
+  ACTIVE_CONV=uname;
+  var k=convKey(uname);if(!CONVS[k]){var u=ACCOUNTS.find(function(a){return a.username===uname;});CONVS[k]={user:u,msgs:[]};}
+  var conv=CONVS[k];conv.msgs.forEach(function(m){m.read=true;});
+  var init=conv.user.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+  var av=document.getElementById('chat-av');av.textContent=init;av.style.background=conv.user.color;
+  document.getElementById('chat-title').textContent=conv.user.name;
+  document.getElementById('inbox-view').style.display='none';
+  document.getElementById('chat-view').style.display='flex';
+  renderMsgs();
+}
+function backToInbox(){document.getElementById('chat-view').style.display='none';document.getElementById('inbox-view').style.display='flex';renderConvList();}
+function renderMsgs(){
+  var k=convKey(ACTIVE_CONV),conv=CONVS[k],box=document.getElementById('chat-msgs');box.innerHTML='';
+  if(conv.msgs.length===0){var p=document.createElement('div');p.style.cssText='text-align:center;color:var(--mu);font-size:14px;padding:24px 0;';p.textContent='No messages yet. Say hi!';box.appendChild(p);return;}
+  conv.msgs.forEach(function(m){
+    var isMe=m.from===CU.username,w=document.createElement('div');w.className='bwrap '+(isMe?'me':'them');
+    var b=document.createElement('div');b.className='bubble '+(isMe?'me':'them');b.textContent=m.text;
+    var t=document.createElement('div');t.className='btime';t.textContent='now';
+    w.appendChild(b);w.appendChild(t);box.appendChild(w);
+  });
+  box.scrollTop=box.scrollHeight;
+}
+function sendMsg(){
+  var inp=document.getElementById('msg-input'),txt=inp.value.trim();if(!txt)return;
+  var k=convKey(ACTIVE_CONV);CONVS[k].msgs.push({from:CU.username,text:txt,read:true});
+  inp.value='';renderMsgs();
+  setTimeout(function(){
+    var r=['lol yeah!','Sure thing!','Sounds good 👍','Nice!','Haha fr','That\'s cool!','Omg yes!'][Math.floor(Math.random()*7)];
+    CONVS[k].msgs.push({from:ACTIVE_CONV,text:r,read:false});renderMsgs();
+  },1200);
+}
+document.getElementById('msg-input').addEventListener('keydown',function(e){if(e.key==='Enter')sendMsg();});
+document.getElementById('cinput').addEventListener('keydown',function(e){if(e.key==='Enter')postComment();});
+
+function renderAdminList(){
+  var list=document.getElementById('a-ulist');list.innerHTML='';
+  document.getElementById('a-uc').textContent=ACCOUNTS.length;
+  ACCOUNTS.forEach(function(acc){
+    var init=acc.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    var isChinguun=acc.username==='Chinguun',isSelf=CU&&acc.username===CU.username;
+    var row=document.createElement('div');row.className='urow';
+    row.innerHTML='<div class="uav" style="background:'+acc.color+'">'+init+'</div>'
+      +'<div class="ui"><div class="un">@'+acc.username+'</div><div class="uj">'+acc.name+' · '+acc.joined+'</div></div>'
+      +'<span class="bdg '+(isChinguun?'gold':'green')+'">'+(isChinguun?'Admin':'Active')+'</span>'
+      +(isSelf?'<span style="font-size:11px;color:#555;margin-left:4px">You</span>':isChinguun?'':'<span class="aa" onclick="openModal(\'ban\',\'@'+acc.username+'\',\''+acc.username+'\')">Ban</span>');
+    list.appendChild(row);
+  });
+}
+function togSet(id){var t=document.getElementById(id);t.classList.toggle('on');t.classList.toggle('off');ntf('Setting updated ✓');}
+
+var pendingAction=null;
+function openModal(action,label,uname){
+  pendingAction={action:action,label:label,uname:uname};
+  document.getElementById('m-title').textContent=action==='ban'?'Ban user?':'Remove content?';
+  document.getElementById('m-body').textContent=action==='ban'?'Ban '+label+'? They will lose access immediately.':'Remove '+label+'? This cannot be undone.';
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');pendingAction=null;}
+function confirmModal(){
+  if(pendingAction&&pendingAction.action==='ban'){
+    ACCOUNTS=ACCOUNTS.filter(function(a){return a.username!==pendingAction.uname;});
+    var k=convKey(pendingAction.uname);delete CONVS[k];
+    ntf('User '+pendingAction.label+' banned.');renderAdminList();renderConvList();
+  }else{ntf('Content removed.');}
+  closeModal();
+}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===document.getElementById('modal'))closeModal();});
+document.getElementById('new-msg-modal').addEventListener('click',function(e){if(e.target===document.getElementById('new-msg-modal'))closeNewMsg();});
+</script>
+</body>
+</html>
